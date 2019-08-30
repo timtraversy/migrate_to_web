@@ -1,0 +1,13 @@
+name: migrate_to_web
+description: Migrate current Flutter projects to be run with Flutter for Web.
+version: 0.0.1
+maintainer: Tim Traversy (@timtraversy)
+homepage: https://github.com/timtraversy/migrate_to_web
+
+dependencies: 
+
+environment:
+  sdk: '>=2.2.0 <3.0.0'
+
+dev_dependencies:
+  test: '^1.6.3'
