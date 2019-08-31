@@ -1,0 +1,16 @@
+name: test_project
+description: Minimal Flutter project.
+
+environment:
+  sdk: '>=2.3.0-dev.0.1 <3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
