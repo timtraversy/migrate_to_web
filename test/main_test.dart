@@ -6,12 +6,18 @@ import 'package:migrate_to_web/main.dart';
 const String projectPath = 'test/test_project';
 
 /// Successfully migrated project for comparing
-const String webProjectPath = '../test_project_web';
+const String successfullMigrationPath =
+    '../successfull_migration/test_project_web';
 
 /// Attempted project migration
-const String migrationAttemptPath = '../migration_attempt';
+const String migrationAttemptPath = '../test_project_web';
 
 void main() {
+  tearDownAll(() {
+    Directory(Directory.current.path + '/' + migrationAttemptPath)
+        .deleteSync(recursive: true);
+  });
+
   Directory.current = projectPath;
   test('Create web project', () async {
     await migrateToWeb([]);
@@ -37,7 +43,7 @@ void main() {
 }
 
 bool fileMigratedSuccessfully(String path) {
-  final File webFile = File(webProjectPath + path);
-  final File attemptFile = File(migrationAttemptPath + path);
-  return webFile.readAsStringSync == attemptFile.readAsStringSync;
+  final File webFile = File(migrationAttemptPath + path);
+  final File attemptFile = File(successfullMigrationPath + path);
+  return webFile.readAsStringSync() == attemptFile.readAsStringSync();
 }
