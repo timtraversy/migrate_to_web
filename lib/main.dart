@@ -36,12 +36,17 @@ Future<void> migrateToWeb(List<String> args) async {
 
   _removeUnneededFiles(newProjectDirectory);
 
-  _updatePubspec(newProjectDirectory);
+  _updatePubspec(
+    projectDirectory: newProjectDirectory,
+    oldName: projectName,
+    newName: newProjectName,
+  );
 
   _updateLibImports(
-      oldName: projectName,
-      newName: newProjectName,
-      dir: Directory(newProjectDirectory.path + '/lib'));
+    oldName: projectName,
+    newName: newProjectName,
+    dir: Directory(newProjectDirectory.path + '/lib'),
+  );
 
   _addWebDirectory(projectName: newProjectName, directory: newProjectDirectory);
 
@@ -79,12 +84,14 @@ void _copyDirectory(Directory source, Directory destination) =>
       }
     });
 
-void _updatePubspec(Directory projectDirectory) {
+void _updatePubspec(
+    {Directory projectDirectory, String oldName, String newName}) {
   final File pubspecFile = File(projectDirectory.path + '/pubspec.yaml');
   String pubspecString = pubspecFile.readAsStringSync();
+  pubspecString = pubspecString.replaceAll(oldName, newName);
   pubspecString = pubspecString.replaceFirst(
     'flutter:\n    sdk: flutter',
-    'flutter_web: any',
+    'flutter_web: any\n  flutter_web_ui: any',
   );
   pubspecString = pubspecString.replaceFirst(
     'flutter_test:\n    sdk: flutter',
