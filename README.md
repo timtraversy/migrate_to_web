@@ -1,4 +1,6 @@
 # Migrate To Web
+![pub package](https://img.shields.io/pub/v/migrate_to_web.svg)
+
 Automatially migrate your current Flutter projects to be compatible with Flutter Web. The current workflow suggested by the Flutter team is to create a copy of your app's code and change it according to their [migration guide](https://github.com/flutter/flutter_web/blob/master/docs/migration_guide.md). This tool automates all those steps and creates a nice little Flutter Web project out of your current one.
 
 #### How To use it
