@@ -7,7 +7,7 @@ import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
-import 'package:migrate_to_web/web_file_strings.dart' as webFiles;
+import 'package:migrate_to_web/web_file_strings.dart' as web_files;
 
 /// Migrates a Flutter project to a new project that can be run on Flutter Web.
 
@@ -96,9 +96,10 @@ void copyDirectory(Directory source, Directory destination) =>
 
 void _addWebDirectory({String projectName, Directory directory}) {
   final webDirectory = Directory(directory.path + '/web')..createSync();
-  File(webDirectory.path + '/index.html').writeAsStringSync(webFiles.indexHtml);
+  File(webDirectory.path + '/index.html')
+      .writeAsStringSync(web_files.indexHtml);
   File(webDirectory.path + '/main.dart')
-      .writeAsStringSync(webFiles.mainDart(projectName: projectName));
+      .writeAsStringSync(web_files.mainDart(projectName: projectName));
 
   // get fonts
   final File pubspecFile = File(directory.path + '/pubspec.yaml');
@@ -119,7 +120,7 @@ void _addWebDirectory({String projectName, Directory directory}) {
     });
   }
   final assetsDir = Directory(webDirectory.path + '/assets')..createSync();
-  final fontsDir = Directory(assetsDir.path + '/fonts')..createSync();
+  Directory(assetsDir.path + '/fonts')..createSync();
   JsonEncoder encoder = new JsonEncoder.withIndent('    ');
   File('${assetsDir.path}/FontManifest.json').writeAsStringSync(
     encoder.convert(fontJson),
@@ -191,6 +192,3 @@ void _updateLibImports({String newName, String oldName, Directory dir}) {
     }
   });
 }
-
-void _runFlutterPackagesGet(String projectName) async =>
-    await Process.run('flutter', ['packages', 'get']);
