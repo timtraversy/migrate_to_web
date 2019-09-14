@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:meta/meta.dart';
 import 'package:args/args.dart';
 import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart';
 
 import 'package:migrate_to_web/web_file_strings.dart' as webFiles;
 
@@ -36,26 +38,28 @@ Future<void> migrateToWeb(List<String> args) async {
   try {
     copyDirectory(Directory.current, newProjectDirectory);
 
-    updatePubspec(
+    _addWebDirectory(
+      projectName: newProjectName,
+      directory: newProjectDirectory,
+    );
+
+    _updatePubspec(
       projectDirectory: newProjectDirectory,
       oldName: projectName,
       newName: newProjectName,
     );
 
-    updateLibImports(
+    _updateLibImports(
       oldName: projectName,
       newName: newProjectName,
       dir: Directory(newProjectDirectory.path + '/lib'),
     );
 
-    addWebDirectory(
-        projectName: newProjectName, directory: newProjectDirectory);
-
     // await _runFlutterPackagesGet(newProjectName);
     logger.stdout('Successfully migrated project!');
   } catch (e) {
     logger.stderr('Error, deleting migration attempt: $e');
-    newProjectDirectory.deleteSync();
+    newProjectDirectory.deleteSync(recursive: true);
   }
 }
 
@@ -90,8 +94,31 @@ void copyDirectory(Directory source, Directory destination) =>
       }
     });
 
-void updatePubspec(
-    {Directory projectDirectory, String oldName, String newName}) {
+void _addWebDirectory({String projectName, Directory directory}) {
+  final webDirectory = Directory(directory.path + '/web')..createSync();
+
+  // get fonts
+  final File pubspecFile = File(directory.path + '/pubspec.yaml');
+  final YamlMap doc = loadYaml(pubspecFile.readAsStringSync());
+  final YamlList fonts = doc['flutter']['fonts'];
+  if (fonts != null) {
+    final assetsDir = Directory(webDirectory.path + '/assets')..createSync();
+    final fontsDir = Directory(assetsDir.path + '/fonts')..createSync();
+    File('${assetsDir.path}/FontManifest.json').writeAsStringSync(
+      jsonEncode(fonts),
+    );
+  }
+
+  File(webDirectory.path + '/index.html').writeAsStringSync(webFiles.indexHtml);
+  File(webDirectory.path + '/main.dart')
+      .writeAsStringSync(webFiles.mainDart(projectName: projectName));
+}
+
+void _updatePubspec({
+  Directory projectDirectory,
+  String oldName,
+  String newName,
+}) {
   final File pubspecFile = File(projectDirectory.path + '/pubspec.yaml');
   String pubspecString = pubspecFile.readAsStringSync();
   pubspecString = pubspecString.replaceAll(oldName, newName);
@@ -134,10 +161,10 @@ void updatePubspec(
   pubspecFile.writeAsStringSync(pubspecString.trim());
 }
 
-void updateLibImports({String newName, String oldName, Directory dir}) {
+void _updateLibImports({String newName, String oldName, Directory dir}) {
   dir.listSync(recursive: false).forEach((var entity) {
     if (entity is Directory) {
-      updateLibImports(dir: entity, newName: newName, oldName: oldName);
+      _updateLibImports(dir: entity, newName: newName, oldName: oldName);
     } else if (entity is File) {
       if (path.basename(entity.path) != '.DS_Store') {
         String fileString = entity.readAsStringSync();
@@ -151,13 +178,6 @@ void updateLibImports({String newName, String oldName, Directory dir}) {
       }
     }
   });
-}
-
-void addWebDirectory({String projectName, Directory directory}) {
-  final webDirectory = Directory(directory.path + '/web')..createSync();
-  File(webDirectory.path + '/index.html').writeAsStringSync(webFiles.indexHtml);
-  File(webDirectory.path + '/main.dart')
-      .writeAsStringSync(webFiles.mainDart(projectName: projectName));
 }
 
 void _runFlutterPackagesGet(String projectName) async =>

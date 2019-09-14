@@ -25,6 +25,7 @@ void main() {
     Directory.current = projectPath;
     test('Create web project', () async {
       await migrateToWeb([]);
+      expect(fileMigratedSuccessfully('/web/assets/FontManifest.json'), isTrue);
       expect(fileMigratedSuccessfully('/pubspec.yaml'), isTrue);
       expect(fileMigratedSuccessfully('/lib/main.dart'), isTrue);
       expect(fileMigratedSuccessfully('/lib/main.dart'), isTrue);

@@ -5,10 +5,11 @@ author: Tim Traversy (@timtraversy)
 homepage: https://github.com/timtraversy/migrate_to_web
 
 dependencies:
-  cli_util: '^0.1.3'
+  cli_util: ^0.1.3
+  yaml: ^2.1.16
 
 environment:
   sdk: '>=2.2.0 <3.0.0'
 
 dev_dependencies:
-  test: '^1.6.3'
+  test: ^1.6.3
