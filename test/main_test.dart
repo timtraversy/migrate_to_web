@@ -13,33 +13,37 @@ const String successfullMigrationPath =
 const String migrationAttemptPath = '../test_project_web';
 
 void main() {
-  tearDownAll(() {
-    Directory(Directory.current.path + '/' + migrationAttemptPath)
-        .deleteSync(recursive: true);
+  group('Unit tests', () {
+    test('Update pubspec', () {});
+    test('Update lib imports', () {});
   });
-
-  Directory.current = projectPath;
-  test('Create web project', () async {
-    await migrateToWeb([]);
-    expect(fileMigratedSuccessfully('/pubspec.yaml'), isTrue);
-    expect(fileMigratedSuccessfully('/lib/main.dart'), isTrue);
-    expect(fileMigratedSuccessfully('/lib/main.dart'), isTrue);
-    expect(fileMigratedSuccessfully('/lib/subdir/home_page.dart'), isTrue);
-    expect(fileMigratedSuccessfully('/web/index.html'), isTrue);
-    expect(fileMigratedSuccessfully('/web/main.dart'), isTrue);
+  group('Whole migration', () {
+    tearDown(() {
+      Directory(Directory.current.path + '/' + migrationAttemptPath)
+          .deleteSync(recursive: true);
+    });
+    Directory.current = projectPath;
+    test('Create web project', () async {
+      await migrateToWeb([]);
+      expect(fileMigratedSuccessfully('/pubspec.yaml'), isTrue);
+      expect(fileMigratedSuccessfully('/lib/main.dart'), isTrue);
+      expect(fileMigratedSuccessfully('/lib/main.dart'), isTrue);
+      expect(fileMigratedSuccessfully('/lib/subdir/home_page.dart'), isTrue);
+      expect(fileMigratedSuccessfully('/web/index.html'), isTrue);
+      expect(fileMigratedSuccessfully('/web/main.dart'), isTrue);
+    });
+    test('Update web project', () async {
+      /// TODO: make sure updating doesn't wipe out web/ changes
+      final String newFlutterMain =
+          File('new_main/flutter.dart').readAsStringSync();
+      final String newWebMain = File('new_main/web.dart').readAsStringSync();
+      final String currentFlutterMain =
+          File(projectPath + '/lib/main.dart').readAsStringSync();
+      final String currentWebMain =
+          File(projectPath + '/lib/main.dart').readAsStringSync();
+      await migrateToWeb([migrationAttemptPath]);
+    }, skip: true);
   });
-
-  test('Update web project', () async {
-    /// TODO: make sure updating doesn't wipe out web/ changes
-    final String newFlutterMain =
-        File('new_main/flutter.dart').readAsStringSync();
-    final String newWebMain = File('new_main/web.dart').readAsStringSync();
-    final String currentFlutterMain =
-        File(projectPath + '/lib/main.dart').readAsStringSync();
-    final String currentWebMain =
-        File(projectPath + '/lib/main.dart').readAsStringSync();
-    await migrateToWeb([migrationAttemptPath]);
-  }, skip: true);
 }
 
 bool fileMigratedSuccessfully(String path) {
