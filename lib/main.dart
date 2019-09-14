@@ -96,22 +96,34 @@ void copyDirectory(Directory source, Directory destination) =>
 
 void _addWebDirectory({String projectName, Directory directory}) {
   final webDirectory = Directory(directory.path + '/web')..createSync();
+  File(webDirectory.path + '/index.html').writeAsStringSync(webFiles.indexHtml);
+  File(webDirectory.path + '/main.dart')
+      .writeAsStringSync(webFiles.mainDart(projectName: projectName));
 
   // get fonts
   final File pubspecFile = File(directory.path + '/pubspec.yaml');
   final YamlMap doc = loadYaml(pubspecFile.readAsStringSync());
   final YamlList fonts = doc['flutter']['fonts'];
-  if (fonts != null) {
-    final assetsDir = Directory(webDirectory.path + '/assets')..createSync();
-    final fontsDir = Directory(assetsDir.path + '/fonts')..createSync();
-    File('${assetsDir.path}/FontManifest.json').writeAsStringSync(
-      jsonEncode(fonts),
-    );
+  final bool usesMaterialDesign = doc['flutter']['uses-material-design'];
+  if (!usesMaterialDesign && fonts == null) {
+    return;
   }
-
-  File(webDirectory.path + '/index.html').writeAsStringSync(webFiles.indexHtml);
-  File(webDirectory.path + '/main.dart')
-      .writeAsStringSync(webFiles.mainDart(projectName: projectName));
+  final List<dynamic> fontJson =
+      fonts == null ? [] : jsonDecode(jsonEncode(fonts));
+  if (usesMaterialDesign) {
+    fontJson.add({
+      'fonts': [
+        {'asset': 'MaterialIcons-Regular.ttf'}
+      ],
+      'family': 'MaterialIcons'
+    });
+  }
+  final assetsDir = Directory(webDirectory.path + '/assets')..createSync();
+  final fontsDir = Directory(assetsDir.path + '/fonts')..createSync();
+  JsonEncoder encoder = new JsonEncoder.withIndent('    ');
+  File('${assetsDir.path}/FontManifest.json').writeAsStringSync(
+    encoder.convert(fontJson),
+  );
 }
 
 void _updatePubspec({
