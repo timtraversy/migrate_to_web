@@ -15,45 +15,51 @@ import 'package:migrate_to_web/web_file_strings.dart' as webFiles;
 Future<void> migrateToWeb(List<String> args) async {
   final String projectName = Directory.current.path.split('/').last;
 
-  final ArgResults results = _getArgs(projectName: projectName, args: args);
-  final Logger logger = _setUpLogger(results: results);
+  final ArgResults results = getArgs(projectName: projectName, args: args);
+  final Logger logger = setUpLogger(results: results);
 
   final String newProjectName = results['name'].toString().trim();
-  final Directory newProjectDirectory = Directory('../$newProjectName')
-    ..createSync();
 
   logger.stdout(
     'Migrating $projectName to a web project named $newProjectName.',
   );
 
-  if (!_hasPubspec()) {
+  if (!hasPubspec()) {
     logger.stderr(
       'No pubspec.yaml file found. Please run `flutter pub run migrate_to_web` from the root of your Fluter project.',
     );
   }
 
-  _copyDirectory(Directory.current, newProjectDirectory);
+  final Directory newProjectDirectory = Directory('../$newProjectName')
+    ..createSync();
 
-  _removeUnneededFiles(newProjectDirectory);
+  try {
+    copyDirectory(Directory.current, newProjectDirectory);
 
-  _updatePubspec(
-    projectDirectory: newProjectDirectory,
-    oldName: projectName,
-    newName: newProjectName,
-  );
+    updatePubspec(
+      projectDirectory: newProjectDirectory,
+      oldName: projectName,
+      newName: newProjectName,
+    );
 
-  _updateLibImports(
-    oldName: projectName,
-    newName: newProjectName,
-    dir: Directory(newProjectDirectory.path + '/lib'),
-  );
+    updateLibImports(
+      oldName: projectName,
+      newName: newProjectName,
+      dir: Directory(newProjectDirectory.path + '/lib'),
+    );
 
-  _addWebDirectory(projectName: newProjectName, directory: newProjectDirectory);
+    addWebDirectory(
+        projectName: newProjectName, directory: newProjectDirectory);
 
-  // await _runFlutterPackagesGet(newProjectName);
+    // await _runFlutterPackagesGet(newProjectName);
+    logger.stdout('Successfully migrated project!');
+  } catch (e) {
+    logger.stderr('Error, deleting migration attempt: $e');
+    newProjectDirectory.deleteSync();
+  }
 }
 
-ArgResults _getArgs({String projectName, List<String> args}) {
+ArgResults getArgs({String projectName, List<String> args}) {
   final ArgParser parser = ArgParser()
     ..addOption(
       'name',
@@ -65,26 +71,26 @@ ArgResults _getArgs({String projectName, List<String> args}) {
   return parser.parse(args);
 }
 
-Logger _setUpLogger({@required ArgResults results}) =>
+Logger setUpLogger({@required ArgResults results}) =>
     results['verbose'] ? Logger.verbose() : Logger.standard();
 
-bool _hasPubspec() => File('pubspec.yaml').existsSync();
+bool hasPubspec() => File('pubspec.yaml').existsSync();
 
-void _copyDirectory(Directory source, Directory destination) =>
+void copyDirectory(Directory source, Directory destination) =>
     source.listSync(recursive: false).forEach((var entity) {
       if (entity is Directory) {
         var newDirectory = Directory(
             path.join(destination.absolute.path, path.basename(entity.path)));
         newDirectory.createSync();
 
-        _copyDirectory(entity.absolute, newDirectory);
+        copyDirectory(entity.absolute, newDirectory);
       } else if (entity is File) {
         entity
             .copySync(path.join(destination.path, path.basename(entity.path)));
       }
     });
 
-void _updatePubspec(
+void updatePubspec(
     {Directory projectDirectory, String oldName, String newName}) {
   final File pubspecFile = File(projectDirectory.path + '/pubspec.yaml');
   String pubspecString = pubspecFile.readAsStringSync();
@@ -128,36 +134,31 @@ void _updatePubspec(
   pubspecFile.writeAsStringSync(pubspecString.trim());
 }
 
-void _updateLibImports({String newName, String oldName, Directory dir}) {
+void updateLibImports({String newName, String oldName, Directory dir}) {
   dir.listSync(recursive: false).forEach((var entity) {
     if (entity is Directory) {
-      _updateLibImports(dir: entity, newName: newName, oldName: oldName);
+      updateLibImports(dir: entity, newName: newName, oldName: oldName);
     } else if (entity is File) {
-      String fileString = entity.readAsStringSync();
-      fileString = fileString.replaceAll(
-          'import \'package:flutter', 'import \'package:flutter_web');
-      fileString = fileString.replaceAll(
-          'import \'dart:ui\'', 'import \'package:flutter_web_ui/ui.dart\'');
-      fileString = fileString.replaceAll(
-          'import \'package:$oldName', 'import \'package:$newName');
-      entity.writeAsStringSync(fileString);
+      if (path.basename(entity.path) != '.DS_Store') {
+        String fileString = entity.readAsStringSync();
+        fileString = fileString.replaceAll(
+            'import \'package:flutter/', 'import \'package:flutter_web/');
+        fileString = fileString.replaceAll(
+            'import \'dart:ui\'', 'import \'package:flutter_web_ui/ui.dart\'');
+        fileString = fileString.replaceAll(
+            'import \'package:$oldName/', 'import \'package:$newName/');
+        entity.writeAsStringSync(fileString);
+      }
     }
   });
 }
 
-void _removeUnneededFiles(Directory directory) {
-  Directory(directory.path + '/ios').deleteSync(recursive: true);
-  Directory(directory.path + '/android').deleteSync(recursive: true);
-}
-
-void _addWebDirectory({String projectName, Directory directory}) {
+void addWebDirectory({String projectName, Directory directory}) {
   final webDirectory = Directory(directory.path + '/web')..createSync();
   File(webDirectory.path + '/index.html').writeAsStringSync(webFiles.indexHtml);
   File(webDirectory.path + '/main.dart')
       .writeAsStringSync(webFiles.mainDart(projectName: projectName));
 }
 
-void _runFlutterPackagesGet(String projectName) async => await Process.run(
-      'cd $projectName && flutter packages get && cd -',
-      [],
-    );
+void _runFlutterPackagesGet(String projectName) async =>
+    await Process.run('flutter', ['packages', 'get']);
