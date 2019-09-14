@@ -12,3 +12,5 @@ pubspec.lock
 doc/api/
 test/test_project/ios/Flutter/flutter_export_environment.sh
 .DS_Store
+
+.vscode/
