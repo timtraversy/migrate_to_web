@@ -16,8 +16,11 @@ To use a different name for the web project, use the argument `-n or --name`.
 
 If you make changes to your project, just run the same command and it will update the web project.
 
+To finish the project set up, all you need to do is run `flutter packages get` in that directory, and upload any font files you were using into the `fonts` folder
+
 #### To-do
-- [ ] Handle assets and fonts
+- [x] Handle fonts
+- [ ] Handle assets
 - [ ] Add tests for updating situations
 
 PRs & issues welcome 😛
